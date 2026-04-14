@@ -4,6 +4,7 @@ import { formatFcfa } from '../utils/currency';
 export default function CarsFleet({ cars, onSelectCar }) {
   const minDaily = Math.min(...cars.map((car) => car.price));
   const maxDaily = Math.max(...cars.map((car) => car.price));
+  const getBrandInitials = (brand) => brand.split(/[\s-]+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase();
 
   return (
     <section className="cars-section">
@@ -53,7 +54,10 @@ export default function CarsFleet({ cars, onSelectCar }) {
             style={{ cursor: 'pointer' }}
           >
             <div className="car-card-image">
-              <div className="car-emoji">{car.emoji}</div>
+              <img className="car-card-photo" src={car.image} alt={`${car.brand} ${car.model}`} loading="lazy" />
+              <div className="car-card-overlay"></div>
+              <span className="car-brand-badge">{getBrandInitials(car.brand)}</span>
+              <span className="car-year-chip">{car.year}</span>
             </div>
 
             <div className="car-card-info">
