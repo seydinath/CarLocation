@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { formatFcfa } from '../utils/currency';
+import { getLocationLabel } from '../utils/locations';
 
 export default function MyBookings({ bookings, onNewBooking }) {
   const [filter, setFilter] = useState('all');
@@ -122,10 +123,7 @@ export default function MyBookings({ bookings, onNewBooking }) {
                 <div className="info-row">
                   <span>Agence</span>
                   <strong>
-                    {booking.location === 'paris' && 'Paris - Orly'}
-                    {booking.location === 'lyon' && 'Lyon - Satolas'}
-                    {booking.location === 'marseille' && 'Marseille - Provence'}
-                    {booking.location === 'nice' && 'Nice - Côte d\'Azur'}
+                    {getLocationLabel(booking.location)}
                   </strong>
                 </div>
               </div>

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { formatFcfa, formatFcfaPlus } from '../utils/currency';
+import { bookingLocations } from '../utils/locations';
 
 export default function BookingForm({ car, player, onBack, onContinue }) {
   const [pickup, setPickup] = useState('');
   const [returnDate, setReturnDate] = useState('');
-  const [location, setLocation] = useState('paris');
+  const [location, setLocation] = useState('almadies');
   const [timeSlot, setTimeSlot] = useState('09:00');
   const [options, setOptions] = useState({
     insurance: false,
@@ -159,10 +160,11 @@ export default function BookingForm({ car, player, onBack, onContinue }) {
               <div className="form-group">
                 <label>Agence *</label>
                 <select value={location} onChange={(e) => setLocation(e.target.value)}>
-                  <option value="paris">Paris - Orly</option>
-                  <option value="lyon">Lyon - Satolas</option>
-                  <option value="marseille">Marseille - Provence</option>
-                  <option value="nice">Nice - Côte d'Azur</option>
+                  {bookingLocations.map((agency) => (
+                    <option key={agency.value} value={agency.value}>
+                      {agency.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 

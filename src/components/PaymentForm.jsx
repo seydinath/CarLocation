@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { formatFcfa, formatFcfaPlus } from '../utils/currency';
+import { getLocationLabel } from '../utils/locations';
 
 export default function PaymentForm({ booking, onBack, onPay }) {
   const [cardNumber, setCardNumber] = useState('');
@@ -100,10 +101,7 @@ export default function PaymentForm({ booking, onBack, onPay }) {
               <div className="info-line">
                 <span>Agence</span>
                 <strong>
-                  {booking.location === 'paris' && 'Paris - Orly'}
-                  {booking.location === 'lyon' && 'Lyon - Satolas'}
-                  {booking.location === 'marseille' && 'Marseille - Provence'}
-                  {booking.location === 'nice' && 'Nice - Côte d\'Azur'}
+                  {getLocationLabel(booking.location)}
                 </strong>
               </div>
             </div>

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { formatFcfa, formatFcfaPlus } from '../utils/currency';
+import { getLocationLabel } from '../utils/locations';
 
 export default function Confirmation({ booking, onNewBooking, onViewBookings }) {
   useEffect(() => {
@@ -84,10 +85,7 @@ export default function Confirmation({ booking, onNewBooking, onViewBookings }) 
               <div className="detail-item">
                 <span className="label">Agence</span>
                 <span className="value">
-                  {booking.location === 'paris' && 'Paris - Orly'}
-                  {booking.location === 'lyon' && 'Lyon - Satolas'}
-                  {booking.location === 'marseille' && 'Marseille - Provence'}
-                  {booking.location === 'nice' && 'Nice - Côte d\'Azur'}
+                  {getLocationLabel(booking.location)}
                 </span>
               </div>
             </div>
