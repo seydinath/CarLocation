@@ -18,21 +18,53 @@
   </head>
   <body>
     <div class="container">
-      <div class="overlay-note">Test Pannellum — image : pannel.jpeg</div>
+      <div class="overlay-note" id="status-note">Chargement de la visite interieure...</div>
       <div id="panorama"></div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
     <script>
-      // Démarrage du viewer Pannellum
-      // Remarque : l'image doit être accessible depuis la racine du serveur via /pannel.jpeg
-      const viewer = pannellum.viewer('panorama', {
-        type: 'equirectangular',
-        panorama: '/pannel.jpeg',
-        autoLoad: true,
-        showZoomCtrl: true,
-        hfov: 100
-      });
+      const localPanorama = '/pannel.jpeg';
+      const fallbackPanorama = 'https://pannellum.org/images/alma.jpg';
+      const statusNote = document.getElementById('status-note');
+
+      function loadViewer(panoramaUrl) {
+        pannellum.viewer('panorama', {
+          type: 'equirectangular',
+          panorama: panoramaUrl,
+          autoLoad: true,
+          showZoomCtrl: true,
+          hfov: 100
+        });
+      }
+
+      function testImage(url, onSuccess, onFailure) {
+        const testImg = new Image();
+        testImg.onload = onSuccess;
+        testImg.onerror = onFailure;
+        testImg.src = url;
+      }
+
+      // On essaie d'abord l'image locale. Si elle manque, on bascule sur une image de secours.
+      testImage(
+        localPanorama,
+        () => {
+          statusNote.textContent = 'Visite interieure active';
+          loadViewer(localPanorama);
+        },
+        () => {
+          testImage(
+            fallbackPanorama,
+            () => {
+              statusNote.textContent = 'Visite interieure active (image de secours)';
+              loadViewer(fallbackPanorama);
+            },
+            () => {
+              statusNote.textContent = 'Impossible de charger la visite interieure';
+            }
+          );
+        }
+      );
     </script>
   </body>
 </html>
