@@ -6,6 +6,7 @@ export const carsDatabase = [
     emoji: "⚡",
     image: "https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=1200&q=80",
     model3d: "/models/TeslaModelSPlaid.glb",
+    interiorTourUrl: "/pannellum.html",
     sketchfabEmbed: "https://sketchfab.com/models/b89f5920ec0244e19992c6a4027dd969/embed",
     year: 2024,
     fuel: "Électrique",

@@ -7,6 +7,11 @@ export default function CarDetails({ car, onBack, onContinueBooking }) {
     return (value / max) * 100;
   };
 
+  const openInteriorTour = () => {
+    if (!car?.interiorTourUrl) return;
+    window.open(car.interiorTourUrl, '_blank', 'noopener,noreferrer');
+  };
+
   if (!car) return null;
 
   return (
@@ -137,6 +142,11 @@ export default function CarDetails({ car, onBack, onContinueBooking }) {
             <button className="btn-secondary" onClick={onBack}>
               Retour
             </button>
+            {car.interiorTourUrl && (
+              <button className="btn-success" onClick={openInteriorTour}>
+                Visite interieur voiture
+              </button>
+            )}
             <button 
               className="btn-primary" 
               onClick={onContinueBooking}
