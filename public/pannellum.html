@@ -9,17 +9,103 @@
       href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"
     />
     <style>
-      html, body { height: 100%; margin: 0; font-family: sans-serif; }
-      .container { width: 90%; max-width: 1000px; margin: 40px auto; height: 600px; position: relative; }
-      #panorama { width: 100%; height: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
-      .overlay-note { position: absolute; top: 12px; left: 12px; z-index: 10; background: rgba(0,0,0,0.45); color: #fff; padding: 6px 10px; border-radius: 4px; }
-      @media (max-width: 600px) { .container { height: 50vh; margin: 16px; } }
+      html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background: #000; color: #fff; }
+      /* Container optimisé mobile-first */
+      .container {
+        width: 100%;
+        height: 100vh;
+        margin: 0;
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        justify-content: center;
+        overflow: hidden;
+      }
+
+      /* Panorama area fills viewport */
+      #panorama {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+        overflow: hidden;
+        touch-action: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      /* Status / small overlay */
+      .overlay-note, #status-note {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 30;
+        background: rgba(0,0,0,0.55);
+        color: #fff;
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        backdrop-filter: blur(6px);
+      }
+
+      /* Mobile instructions and controls at bottom */
+      .mobile-instructions {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 86px;
+        z-index: 30;
+        background: rgba(0,0,0,0.45);
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+      }
+
+      .mobile-controls {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 16px;
+        z-index: 40;
+        display: flex;
+        gap: 12px;
+      }
+
+      .mobile-controls button {
+        background: linear-gradient(135deg,#222 0%, #444 100%);
+        color: #fff;
+        border: none;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+      }
+
+      .mobile-controls button:active { transform: translateY(1px); }
+
+      /* Smaller screens tweaks */
+      @media (max-width: 600px) {
+        .mobile-instructions { font-size: 12px; bottom: 82px; }
+        .mobile-controls button { padding: 10px 12px; font-size: 13px; }
+      }
+
+      @media (min-width: 900px) {
+        /* desktop: keep compact container */
+        .container { max-width: 1000px; height: 600px; margin: 40px auto; border-radius: 10px; }
+        #panorama { border-radius: 8px; }
+        .mobile-controls, .mobile-instructions { display: none; }
+      }
     </style>
   </head>
   <body>
     <div class="container">
-      <div class="overlay-note" id="status-note">Chargement de la visite interieure...</div>
       <div id="panorama"></div>
+      <div id="status-note" class="overlay-note">Chargement de la visite...</div>
+      <div class="mobile-instructions">Glisse pour regarder • Pince pour zoomer</div>
+      <div class="mobile-controls">
+        <button id="enter-fs">Plein écran</button>
+        <button id="close-view">Fermer</button>
+      </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
@@ -27,44 +113,85 @@
       const localPanorama = '/pannel.png';
       const fallbackPanorama = 'https://pannellum.org/images/alma.jpg';
       const statusNote = document.getElementById('status-note');
+      const enterFsBtn = document.getElementById('enter-fs');
+      const closeBtn = document.getElementById('close-view');
+
+      let viewer = null;
 
       function loadViewer(panoramaUrl) {
-        pannellum.viewer('panorama', {
+        // options tuned for mobile ergonomics
+        viewer = pannellum.viewer('panorama', {
           type: 'equirectangular',
           panorama: panoramaUrl,
           autoLoad: true,
           showZoomCtrl: true,
-          hfov: 100
+          showFullscreenCtrl: false,
+          compass: true,
+          hfov: (window.innerWidth < 600) ? 110 : 100,
+          keyboardZoom: false,
+          mouseZoom: true
         });
+
+        if (viewer && typeof viewer.on === 'function') {
+          viewer.on('load', function() {
+            statusNote.textContent = 'Visite prête';
+          });
+        } else {
+          // Fallback: after short delay assume ready
+          setTimeout(() => statusNote.textContent = 'Visite prête', 900);
+        }
+
+        // handle viewer errors (older pannellum versions may not emit 'error')
+        setTimeout(() => {
+          try {
+            if (!viewer || typeof viewer.getPitch !== 'function') {
+              statusNote.textContent = 'Impossible de démarrer le viewer';
+            }
+          } catch (e) {
+            statusNote.textContent = 'Erreur du viewer';
+          }
+        }, 3000);
       }
 
       function testImage(url, onSuccess, onFailure) {
         const testImg = new Image();
         testImg.onload = onSuccess;
         testImg.onerror = onFailure;
-        testImg.src = url;
+        // cache-bust in case image was updated
+        testImg.src = url + '?_=' + Date.now();
       }
 
-      // On essaie d'abord l'image locale. Si elle manque, on bascule sur une image de secours.
+      // Try local image first, then fallback
       testImage(
         localPanorama,
-        () => {
-          statusNote.textContent = 'Visite interieure active';
-          loadViewer(localPanorama);
-        },
-        () => {
-          testImage(
-            fallbackPanorama,
-            () => {
-              statusNote.textContent = 'Visite interieure active (image de secours)';
-              loadViewer(fallbackPanorama);
-            },
-            () => {
-              statusNote.textContent = 'Impossible de charger la visite interieure';
-            }
-          );
-        }
+        () => { statusNote.textContent = 'Visite interieure active'; loadViewer(localPanorama); },
+        () => { testImage(fallbackPanorama, () => { statusNote.textContent = 'Image de secours utilisée'; loadViewer(fallbackPanorama); }, () => { statusNote.textContent = 'Impossible de charger la visite'; }); }
       );
+
+      // Fullscreen button behavior (mobile-friendly)
+      enterFsBtn.addEventListener('click', async () => {
+        const el = document.documentElement;
+        try {
+          if (el.requestFullscreen) await el.requestFullscreen();
+          else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+          else if (el.msRequestFullscreen) await el.msRequestFullscreen();
+        } catch (e) {
+          console.warn('fullscreen failed', e);
+        }
+      });
+
+      // Close button: try close, fallback to history back
+      closeBtn.addEventListener('click', () => {
+        try { window.close(); } catch (e) {}
+        setTimeout(() => { history.back(); }, 200);
+      });
+
+      // Improve touch responsiveness: re-adjust hfov on orientation change
+      window.addEventListener('orientationchange', () => {
+        if (viewer && typeof viewer.setHfov === 'function') {
+          viewer.setHfov((window.innerWidth < 600) ? 110 : 100);
+        }
+      });
     </script>
   </body>
 </html>
