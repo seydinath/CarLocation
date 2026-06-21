@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Test Pannellum - Visite immersive</title>
+    <title>Visite immersive - PhotoSphereViewer</title>
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"
+      href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.10.4/index.min.css"
     />
     <style>
       html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background: #000; color: #fff; }
@@ -83,6 +83,23 @@
 
       .mobile-controls button:active { transform: translateY(1px); }
 
+      .psv-container {
+        width: 100%;
+        height: 100%;
+      }
+
+      .psv-loader {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at center, rgba(255,255,255,0.08), rgba(0,0,0,0.72));
+        z-index: 20;
+        font-size: 14px;
+        letter-spacing: 0.02em;
+      }
+
       /* Smaller screens tweaks */
       @media (max-width: 600px) {
         .mobile-instructions { font-size: 12px; bottom: 82px; }
@@ -108,7 +125,9 @@
       </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.10.4/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/virtual-tour-plugin@5.10.4/index.min.js"></script>
     <script>
       const localPanorama = '/pannel.png';
       const fallbackPanorama = 'https://pannellum.org/images/alma.jpg';
@@ -117,40 +136,47 @@
       const closeBtn = document.getElementById('close-view');
 
       let viewer = null;
+      const PSV = window.PhotoSphereViewer;
 
       function loadViewer(panoramaUrl) {
-        // options tuned for mobile ergonomics
-        viewer = pannellum.viewer('panorama', {
-          type: 'equirectangular',
+        const container = document.getElementById('panorama');
+        container.innerHTML = '';
+
+        viewer = new PSV.Viewer({
+          container,
           panorama: panoramaUrl,
-          autoLoad: true,
-          showZoomCtrl: true,
-          showFullscreenCtrl: false,
-          compass: true,
-          hfov: (window.innerWidth < 600) ? 110 : 100,
-          keyboardZoom: false,
-          mouseZoom: true
+          navbar: ['zoom', 'fullscreen'],
+          caption: 'Visite interieur voiture',
+          loadingTxt: 'Chargement...',
+          touchmoveTwoFingers: true,
+          mousewheelCtrlKey: false,
+          defaultZoomLvl: window.innerWidth < 600 ? 0 : 1,
+          sphereCorrection: { pan: 0, tilt: 0, roll: 0 },
+          minFov: 30,
+          maxFov: 90,
+          moveSpeed: 1.2,
+          zoomSpeed: 1.0,
+          gyroscope: false
         });
 
-        if (viewer && typeof viewer.on === 'function') {
-          viewer.on('load', function() {
-            statusNote.textContent = 'Visite prête';
-          });
-        } else {
-          // Fallback: after short delay assume ready
-          setTimeout(() => statusNote.textContent = 'Visite prête', 900);
-        }
+        viewer.addEventListener('ready', () => {
+          statusNote.textContent = 'Visite prête';
+        });
 
-        // handle viewer errors (older pannellum versions may not emit 'error')
-        setTimeout(() => {
-          try {
-            if (!viewer || typeof viewer.getPitch !== 'function') {
-              statusNote.textContent = 'Impossible de démarrer le viewer';
-            }
-          } catch (e) {
-            statusNote.textContent = 'Erreur du viewer';
+        viewer.addEventListener('position-updated', () => {
+          if (window.innerWidth < 600) {
+            statusNote.textContent = 'Glisse pour regarder';
+            setTimeout(() => {
+              if (statusNote.textContent === 'Glisse pour regarder') {
+                statusNote.textContent = 'Visite prête';
+              }
+            }, 1200);
           }
-        }, 3000);
+        });
+
+        viewer.addEventListener('error', () => {
+          statusNote.textContent = 'Erreur de chargement de la visite';
+        });
       }
 
       function testImage(url, onSuccess, onFailure) {
@@ -188,8 +214,8 @@
 
       // Improve touch responsiveness: re-adjust hfov on orientation change
       window.addEventListener('orientationchange', () => {
-        if (viewer && typeof viewer.setHfov === 'function') {
-          viewer.setHfov((window.innerWidth < 600) ? 110 : 100);
+        if (viewer && typeof viewer.setFov === 'function') {
+          viewer.setFov(window.innerWidth < 600 ? 70 : 60);
         }
       });
     </script>
