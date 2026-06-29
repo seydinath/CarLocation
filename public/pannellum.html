@@ -3,221 +3,410 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Visite immersive - PhotoSphereViewer</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.10.4/index.min.css"
-    />
+    <title>Visite immersive voiture</title>
     <style>
-      html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background: #000; color: #fff; }
-      /* Container optimisé mobile-first */
-      .container {
-        width: 100%;
-        height: 100vh;
+      html, body {
+        height: 100%;
         margin: 0;
-        position: relative;
-        display: flex;
-        align-items: stretch;
-        justify-content: center;
-        overflow: hidden;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+        background: #eef2f8;
+        color: #0f172a;
       }
 
-      /* Panorama area fills viewport */
-      #panorama {
+      .page {
         width: 100%;
-        height: 100%;
-        border-radius: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+
+      .viewer-shell {
+        width: min(1180px, 100%);
+        border-radius: 16px;
+        border: 1px solid rgba(15, 23, 42, 0.08);
         overflow: hidden;
-        touch-action: none;
-        -webkit-tap-highlight-color: transparent;
+        box-shadow: 0 18px 36px rgba(15, 23, 42, 0.12);
+        background: #fff;
       }
 
-      /* Status / small overlay */
-      .overlay-note, #status-note {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        z-index: 30;
-        background: rgba(0,0,0,0.55);
-        color: #fff;
-        padding: 8px 10px;
-        border-radius: 8px;
-        font-size: 13px;
-        backdrop-filter: blur(6px);
-      }
-
-      /* Mobile instructions and controls at bottom */
-      .mobile-instructions {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: 86px;
-        z-index: 30;
-        background: rgba(0,0,0,0.45);
-        color: #fff;
-        padding: 8px 12px;
-        border-radius: 999px;
-        font-size: 13px;
-      }
-
-      .mobile-controls {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: 16px;
-        z-index: 40;
-        display: flex;
-        gap: 12px;
-      }
-
-      .mobile-controls button {
-        background: linear-gradient(135deg,#222 0%, #444 100%);
-        color: #fff;
-        border: none;
-        padding: 10px 14px;
-        border-radius: 12px;
-        font-weight: 600;
-        font-size: 14px;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.5);
-      }
-
-      .mobile-controls button:active { transform: translateY(1px); }
-
-      .psv-container {
-        width: 100%;
-        height: 100%;
-      }
-
-      .psv-loader {
-        position: absolute;
-        inset: 0;
+      .toolbar {
         display: flex;
         align-items: center;
-        justify-content: center;
-        background: radial-gradient(circle at center, rgba(255,255,255,0.08), rgba(0,0,0,0.72));
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+        background: linear-gradient(180deg, #ffffff, #f7f9fc);
+      }
+
+      #status-note {
+        font-size: 13px;
+        font-weight: 600;
+        color: #334155;
+      }
+
+      .toolbar-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .toolbar-actions button {
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        background: linear-gradient(135deg, #ffffff, #edf3fa);
+        color: #0f172a;
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .stage {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        background: #dbe3f2;
+        overflow: hidden;
+      }
+
+      #panorama {
+        position: absolute;
+        inset: 0;
+      }
+
+      .view-hotspot {
+        position: absolute;
         z-index: 20;
-        font-size: 14px;
-        letter-spacing: 0.02em;
+        width: 34px;
+        height: 34px;
+        border: 0;
+        border-radius: 999px;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(145deg, #f97316, #ea580c);
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 10px 24px rgba(234, 88, 12, 0.35);
       }
 
-      /* Smaller screens tweaks */
-      @media (max-width: 600px) {
-        .mobile-instructions { font-size: 12px; bottom: 82px; }
-        .mobile-controls button { padding: 10px 12px; font-size: 13px; }
+      .view-hotspot::after {
+        content: '';
+        position: absolute;
+        inset: -8px;
+        border-radius: 999px;
+        border: 2px solid rgba(249, 115, 22, 0.36);
+        animation: pulse 1.8s infinite;
       }
 
-      @media (min-width: 900px) {
-        /* desktop: keep compact container */
-        .container { max-width: 1000px; height: 600px; margin: 40px auto; border-radius: 10px; }
-        #panorama { border-radius: 8px; }
-        .mobile-controls, .mobile-instructions { display: none; }
+      @keyframes pulse {
+        0% { transform: scale(0.72); opacity: 1; }
+        100% { transform: scale(1.18); opacity: 0; }
+      }
+
+      .view-label {
+        position: absolute;
+        z-index: 20;
+        transform: translate(-50%, 10px);
+        padding: 5px 9px;
+        border-radius: 999px;
+        border: 1px solid rgba(15, 23, 42, 0.1);
+        background: rgba(255, 255, 255, 0.9);
+        color: #0f172a;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+        pointer-events: none;
+      }
+
+      @media (max-width: 760px) {
+        .page {
+          padding: 0;
+        }
+
+        .viewer-shell {
+          border-radius: 0;
+          border-left: 0;
+          border-right: 0;
+          min-height: 100vh;
+        }
+
+        .stage {
+          aspect-ratio: auto;
+          min-height: calc(100vh - 58px);
+        }
+
+        #status-note {
+          font-size: 12px;
+        }
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <div id="panorama"></div>
-      <div id="status-note" class="overlay-note">Chargement de la visite...</div>
-      <div class="mobile-instructions">Glisse pour regarder • Pince pour zoomer</div>
-      <div class="mobile-controls">
-        <button id="enter-fs">Plein écran</button>
-        <button id="close-view">Fermer</button>
-      </div>
+    <div class="page">
+      <section class="viewer-shell">
+        <header class="toolbar">
+          <div id="status-note">Chargement de la vue panoramique...</div>
+          <div class="toolbar-actions">
+            <button id="enter-fs" type="button">Plein écran</button>
+            <button id="close-view" type="button">Fermer</button>
+          </div>
+        </header>
+
+        <div class="stage" id="stage">
+          <div id="panorama"></div>
+
+          <button id="spot-1" class="view-hotspot" style="left:26%; top:42%;" type="button" aria-label="Vue avant">1</button>
+          <button id="spot-2" class="view-hotspot" style="left:50%; top:36%;" type="button" aria-label="Vue conducteur">2</button>
+          <button id="spot-3" class="view-hotspot" style="left:73%; top:46%;" type="button" aria-label="Vue arriere">3</button>
+
+          <div class="view-label" style="left:26%; top:42%;">Avant</div>
+          <div class="view-label" style="left:50%; top:36%;">Conducteur</div>
+          <div class="view-label" style="left:73%; top:46%;">Arriere</div>
+        </div>
+      </section>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5.10.4/index.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/virtual-tour-plugin@5.10.4/index.min.js"></script>
     <script>
-      const localPanorama = '/pannel.png';
-      const fallbackPanorama = 'https://pannellum.org/images/alma.jpg';
       const statusNote = document.getElementById('status-note');
+      const panoramaEl = document.getElementById('panorama');
       const enterFsBtn = document.getElementById('enter-fs');
       const closeBtn = document.getElementById('close-view');
 
-      let viewer = null;
-      const PSV = window.PhotoSphereViewer;
+      const VIEWS = {
+        1: { name: 'Vue avant', image: 'pannel.png', lon: -5, lat: 2 },
+        2: { name: 'Vue conducteur', image: 'pannel.png', lon: -70, lat: 6 },
+        3: { name: 'Vue arriere', image: 'pannel.png', lon: 120, lat: -2 }
+      };
 
-      function loadViewer(panoramaUrl) {
-        const container = document.getElementById('panorama');
-        container.innerHTML = '';
+      let renderer = null;
+      let scene = null;
+      let camera = null;
+      let sphere = null;
+      let texture = null;
+      let animationId = null;
 
-        viewer = new PSV.Viewer({
-          container,
-          panorama: panoramaUrl,
-          navbar: ['zoom', 'fullscreen'],
-          caption: 'Visite interieur voiture',
-          loadingTxt: 'Chargement...',
-          touchmoveTwoFingers: true,
-          mousewheelCtrlKey: false,
-          defaultZoomLvl: window.innerWidth < 600 ? 0 : 1,
-          sphereCorrection: { pan: 0, tilt: 0, roll: 0 },
-          minFov: 30,
-          maxFov: 90,
-          moveSpeed: 1.2,
-          zoomSpeed: 1.0,
-          gyroscope: false
-        });
+      let isPointerDown = false;
+      let startX = 0;
+      let startY = 0;
+      let lon = 0;
+      let lat = 0;
+      let lonStart = 0;
+      let latStart = 0;
+      let targetLon = 0;
+      let targetLat = 0;
+      let fov = 76;
 
-        viewer.addEventListener('ready', () => {
-          statusNote.textContent = 'Visite prête';
-        });
+      function clamp(v, min, max) {
+        return Math.max(min, Math.min(max, v));
+      }
 
-        viewer.addEventListener('position-updated', () => {
-          if (window.innerWidth < 600) {
-            statusNote.textContent = 'Glisse pour regarder';
-            setTimeout(() => {
-              if (statusNote.textContent === 'Glisse pour regarder') {
-                statusNote.textContent = 'Visite prête';
-              }
-            }, 1200);
+      function disposeViewer() {
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+          animationId = null;
+        }
+
+        if (texture) {
+          texture.dispose();
+          texture = null;
+        }
+
+        if (sphere) {
+          sphere.geometry.dispose();
+          sphere.material.dispose();
+          sphere = null;
+        }
+
+        if (renderer) {
+          renderer.dispose();
+          renderer.forceContextLoss();
+          renderer.domElement.remove();
+          renderer = null;
+        }
+
+        scene = null;
+        camera = null;
+      }
+
+      function animate() {
+        animationId = requestAnimationFrame(animate);
+
+        lon += (targetLon - lon) * 0.08;
+        lat += (targetLat - lat) * 0.08;
+        lat = clamp(lat, -80, 80);
+
+        const phi = THREE.MathUtils.degToRad(90 - lat);
+        const theta = THREE.MathUtils.degToRad(lon);
+
+        const x = 500 * Math.sin(phi) * Math.cos(theta);
+        const y = 500 * Math.cos(phi);
+        const z = 500 * Math.sin(phi) * Math.sin(theta);
+
+        camera.lookAt(x, y, z);
+        renderer.render(scene, camera);
+      }
+
+      function setView(viewConfig) {
+        lon = viewConfig.lon;
+        lat = viewConfig.lat;
+        targetLon = viewConfig.lon;
+        targetLat = viewConfig.lat;
+        statusNote.textContent = viewConfig.name + ' active';
+      }
+
+      function initPanorama(initialView) {
+        disposeViewer();
+        statusNote.textContent = 'Création du renderer...';
+
+        const w = panoramaEl.clientWidth;
+        const h = panoramaEl.clientHeight;
+        console.log('Taille panorama:', w, 'x', h);
+
+        if (w === 0 || h === 0) {
+          statusNote.textContent = 'Erreur: zone panorama non visible';
+          console.error('Panorama element has zero size!');
+          return;
+        }
+
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio || 1);
+        renderer.setSize(w, h);
+        panoramaEl.innerHTML = '';
+        panoramaEl.appendChild(renderer.domElement);
+        console.log('Renderer créé');
+
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(fov, panoramaEl.clientWidth / panoramaEl.clientHeight, 1, 1100);
+        console.log('Scene et camera créées');
+
+        const geometry = new THREE.SphereGeometry(500, 64, 40);
+        geometry.scale(-1, 1, 1);
+        console.log('Geometrie créée');
+
+        const loader = new THREE.TextureLoader();
+        statusNote.textContent = 'Chargement texture: ' + initialView.name;
+
+        loader.load(
+          initialView.image,
+          (loaded) => {
+            console.log('Texture chargée:', initialView.image);
+            texture = loaded;
+            texture.colorSpace = THREE.SRGBColorSpace;
+            const material = new THREE.MeshBasicMaterial({ map: texture });
+            sphere = new THREE.Mesh(geometry, material);
+            scene.add(sphere);
+
+            console.log('Sphere ajoutée à la scène');
+            setView(initialView);
+            animate();
+          },
+          (progress) => {
+            const pct = Math.round((progress.loaded / progress.total) * 100);
+            statusNote.textContent = 'Chargement: ' + initialView.name + ' (' + pct + '%)';
+          },
+          (err) => {
+            console.error('Erreur de chargement texture:', err);
+            statusNote.textContent = 'Erreur: ' + err.message;
           }
-        });
-
-        viewer.addEventListener('error', () => {
-          statusNote.textContent = 'Erreur de chargement de la visite';
-        });
+        );
+        console.log('Initiation chargement texture:', initialView.image);
       }
 
-      function testImage(url, onSuccess, onFailure) {
-        const testImg = new Image();
-        testImg.onload = onSuccess;
-        testImg.onerror = onFailure;
-        // cache-bust in case image was updated
-        testImg.src = url + '?_=' + Date.now();
+      function onPointerDown(event) {
+        if (!renderer) return;
+        isPointerDown = true;
+        const p = event.touches ? event.touches[0] : event;
+        startX = p.clientX;
+        startY = p.clientY;
+        lonStart = targetLon;
+        latStart = targetLat;
       }
 
-      // Try local image first, then fallback
-      testImage(
-        localPanorama,
-        () => { statusNote.textContent = 'Visite interieure active'; loadViewer(localPanorama); },
-        () => { testImage(fallbackPanorama, () => { statusNote.textContent = 'Image de secours utilisée'; loadViewer(fallbackPanorama); }, () => { statusNote.textContent = 'Impossible de charger la visite'; }); }
-      );
+      function onPointerMove(event) {
+        if (!renderer || !isPointerDown) return;
+        const p = event.touches ? event.touches[0] : event;
+        const dx = p.clientX - startX;
+        const dy = p.clientY - startY;
+        targetLon = lonStart - dx * 0.16;
+        targetLat = latStart + dy * 0.14;
+      }
 
-      // Fullscreen button behavior (mobile-friendly)
+      function onPointerUp() {
+        isPointerDown = false;
+      }
+
+      function onWheel(event) {
+        if (!renderer || !camera) return;
+        event.preventDefault();
+        fov = clamp(fov + event.deltaY * 0.03, 40, 95);
+        camera.fov = fov;
+        camera.updateProjectionMatrix();
+      }
+
+      function onResize() {
+        if (!renderer || !camera) return;
+        const w = panoramaEl.clientWidth;
+        const h = panoramaEl.clientHeight;
+        renderer.setSize(w, h);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+
+      document.getElementById('spot-1').addEventListener('click', () => setView(VIEWS[1]));
+      document.getElementById('spot-2').addEventListener('click', () => setView(VIEWS[2]));
+      document.getElementById('spot-3').addEventListener('click', () => setView(VIEWS[3]));
+
+      panoramaEl.addEventListener('mousedown', onPointerDown);
+      panoramaEl.addEventListener('mousemove', onPointerMove);
+      window.addEventListener('mouseup', onPointerUp);
+      panoramaEl.addEventListener('touchstart', onPointerDown, { passive: true });
+      panoramaEl.addEventListener('touchmove', onPointerMove, { passive: true });
+      panoramaEl.addEventListener('touchend', onPointerUp);
+      panoramaEl.addEventListener('wheel', onWheel, { passive: false });
+      window.addEventListener('resize', onResize);
+
       enterFsBtn.addEventListener('click', async () => {
         const el = document.documentElement;
         try {
           if (el.requestFullscreen) await el.requestFullscreen();
           else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
           else if (el.msRequestFullscreen) await el.msRequestFullscreen();
-        } catch (e) {
-          console.warn('fullscreen failed', e);
-        }
+        } catch (_) {}
       });
 
-      // Close button: try close, fallback to history back
       closeBtn.addEventListener('click', () => {
-        try { window.close(); } catch (e) {}
+        try { window.close(); } catch (_) {}
         setTimeout(() => { history.back(); }, 200);
       });
 
-      // Improve touch responsiveness: re-adjust hfov on orientation change
-      window.addEventListener('orientationchange', () => {
-        if (viewer && typeof viewer.setFov === 'function') {
-          viewer.setFov(window.innerWidth < 600 ? 70 : 60);
-        }
-      });
+      const probe = new Image();
+      probe.onload = () => {
+        console.log('Image probe chargée');
+        
+        // Attendre que THREE soit disponible
+        const checkThree = setInterval(() => {
+          if (typeof THREE !== 'undefined' && THREE.WebGLRenderer) {
+            clearInterval(checkThree);
+            console.log('THREE disponible');
+            initPanorama(VIEWS[1]);
+          }
+        }, 100);
+        
+        // Timeout de sécurité: arrêter après 5s
+        setTimeout(() => {
+          clearInterval(checkThree);
+          statusNote.textContent = 'Erreur: THREE.js non chargé';
+          console.error('THREE.js timeout');
+        }, 5000);
+      };
+      probe.onerror = (err) => {
+        console.error('Erreur probe:', err);
+        statusNote.textContent = 'Image pannel.png introuvable';
+      };
+      probe.src = 'pannel.png?_=' + Date.now();
     </script>
   </body>
 </html>
